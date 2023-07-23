@@ -32,7 +32,7 @@ namespace Esiur.Labs.Statistics
                 rt += (x[i] - X) * (y[i] - Y);
                 rt += (x[i] * y[i] - Y * x[i] - X * y[i] + X * Y);//  - X) * (y[i] - Y);
             }
-            
+
             return rt / n;
         }
 
@@ -51,10 +51,16 @@ namespace Esiur.Labs.Statistics
             return Covariance(x, y) / (StdDiv(x) * StdDiv(y));
         }
 
+        public static double Entropy(this double[] x, int logBase = 2)
+        {
+            return x.Sum(p => -p * Math.Log(p)) / Math.Log(logBase);
+        }
+
         public static double Distance(this PointF from, PointF to)
         {
             return Math.Sqrt(Math.Pow(from.X - to.X, 2) + Math.Pow(from.Y - to.Y, 2));
         }
+
 
         class KClass
         {
@@ -74,19 +80,19 @@ namespace Esiur.Labs.Statistics
 
             var classes = new Dictionary<KClass, List<PointF>>();
             for (var i = 0; i < seeds.Length; i++)
-                classes.Add(new KClass() { Id = i+1, Center = seeds[i] }, new List<PointF>());
+                classes.Add(new KClass() { Id = i + 1, Center = seeds[i] }, new List<PointF>());
 
             while (true)
             {
 
                 foreach (var point in points)
                 {
-                    var cls = classes.Keys.OrderBy(x => x.Center.Distance(point)).First(); 
+                    var cls = classes.Keys.OrderBy(x => x.Center.Distance(point)).First();
                     classes[cls].Add(point);
                 }
 
                 // update center
-                foreach(var kv in classes)
+                foreach (var kv in classes)
                 {
                     kv.Key.Center = new PointF() { X = kv.Value.Average(p => p.X), Y = kv.Value.Average(p => p.Y) };
                     kv.Value.Clear();
