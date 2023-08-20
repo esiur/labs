@@ -1,4 +1,28 @@
-﻿using System;
+﻿/*
+MIT License
+
+Copyright (c) 2012 - 2023 Esiur Foundation, Ahmed Khalaf Zamil.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -62,7 +86,8 @@ namespace Esiur.Labs.Security
 
         int _b, _c, _w, _r, _l;
         int rounds;
-        
+        int _outputLength;
+
         public Keccak(KeccakPermutation permutation, int rateLength, int capacityLength, int outputLength)//, ulong[] initialState)
         {
 
@@ -71,6 +96,8 @@ namespace Esiur.Labs.Security
             _w = ((int)permutation) / 25;
             _l = (int)(Math.Log(_w) / Math.Log(2));
             rounds = 12 + 2 * _l;
+
+            _outputLength = outputLength;
 
             //if (rateLength + capacityLength != 200)
             //    throw new Exception("Rate+Capacity must equal to 200.");
@@ -93,11 +120,12 @@ namespace Esiur.Labs.Security
 
         public byte[] Compute(bool[] mbits)
         {
+            var rt = new byte[_outputLength];
 
             var d = Math.Pow(2, mbits.Length);
             for (var i = 0; i < mbits.Length; i++)
                 if (mbits[i])
-                    d += Math.Pow(2, i)
+                    d += Math.Pow(2, i);
             /*
             # Padding
             d = 2 ^| Mbits | +sum for i = 0.. | Mbits | -1 of 2 ^ i * Mbits[i]
@@ -128,6 +156,8 @@ namespace Esiur.Labs.Security
               return Z
 
              */
+
+            return rt;
         }
 
 
