@@ -88,11 +88,11 @@ namespace Esiur.Labs.Security
 
         int _b; // width of permutations (25, 50, 100, 200, 400, 800, 1600)
         int _w; // word size {1, 2, 4, 8, 16, 32, 64}
-        int _l;
+        int _l; // word size self information ? {0, 1, 2, 3, 4, 5, 6}
         int _r; // rate length
         int _c; // capacity
         int _n_r; // number of rounds
-        int _outputLength;
+        int _outputLength; // the output will be trimmed to this length
 
         public Keccak(KeccakPermutation permutation, int rateLength, int capacityLength, int outputLength)//, ulong[] initialState)
         {
@@ -126,18 +126,21 @@ namespace Esiur.Labs.Security
 
         public byte[] Compute(bool[] mbits)
         {
+
             var rt = new byte[_outputLength];
+
+            /*
+                # Padding
+                d = 2 ^| Mbits | +sum for i = 0.. | Mbits | -1 of 2 ^ i * Mbits[i]
+                P = Mbytes || d || 0x00 || … || 0x00
+                P = P xor(0x00 || … || 0x00 || 0x80)
+            */
 
             var d = Math.Pow(2, mbits.Length);
             for (var i = 0; i < mbits.Length; i++)
                 if (mbits[i])
                     d += Math.Pow(2, i);
-            /*
-            # Padding
-            d = 2 ^| Mbits | +sum for i = 0.. | Mbits | -1 of 2 ^ i * Mbits[i]
-            P = Mbytes || d || 0x00 || … || 0x00
-            P = P xor(0x00 || … || 0x00 || 0x80)
-          */
+    
 
 
             /*
