@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+// reference: https://keccak.team/keccak_specs_summary.html
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -33,40 +35,40 @@ namespace Esiur.Labs.Security
 
         // Round constants
         readonly ulong[] RC =
-{
-                0x0000000000000001,
-                0x0000000000008082,
-                0x800000000000808A,
-                0x8000000080008000,
-                0x000000000000808B,
-                0x0000000080000001,
-                0x8000000080008081,
-                0x8000000000008009,
-                0x000000000000008A,
-                0x0000000000000088,
-                0x0000000080008009,
-                0x000000008000000A,
-                0x000000008000808B,
-                0x800000000000008B,
-                0x8000000000008089,
-                0x8000000000008003,
-                0x8000000000008002,
-                0x8000000000000080,
-                0x000000000000800A,
-                0x800000008000000A,
-                0x8000000080008081,
-                0x8000000000008080,
-                0x0000000080000001,
-                0x8000000080008008
+        {
+            0x0000000000000001,
+            0x0000000000008082,
+            0x800000000000808A,
+            0x8000000080008000,
+            0x000000000000808B,
+            0x0000000080000001,
+            0x8000000080008081,
+            0x8000000000008009,
+            0x000000000000008A,
+            0x0000000000000088,
+            0x0000000080008009,
+            0x000000008000000A,
+            0x000000008000808B,
+            0x800000000000008B,
+            0x8000000000008089,
+            0x8000000000008003,
+            0x8000000000008002,
+            0x8000000000000080,
+            0x000000000000800A,
+            0x800000008000000A,
+            0x8000000080008081,
+            0x8000000000008080,
+            0x0000000080000001,
+            0x8000000080008008
         };
 
         // Rotation offsets
         readonly int[,] R =
         {
-            {0, 1, 62, 28, 27 },
-            {36, 44,  6,55   , 20 },
-            {3 , 10,  43,25 ,  39   },
-            {41 ,45 , 15,21 ,  8 }
+            {0, 1, 62, 28, 27},
+            {36, 44, 6, 55, 20},
+            {3, 10, 43, 25, 39},
+            {41, 45, 15, 21, 8}
         };
 
         public enum KeccakPermutation
@@ -84,18 +86,22 @@ namespace Esiur.Labs.Security
 
         //int rate, capacity, width, rounds;
 
-        int _b, _c, _w, _r, _l;
-        int rounds;
+        int _b; // width of permutations (25, 50, 100, 200, 400, 800, 1600)
+        int _w; // word size {1, 2, 4, 8, 16, 32, 64}
+        int _l;
+        int _r; // rate length
+        int _c; // capacity
+        int _n_r; // number of rounds
         int _outputLength;
 
         public Keccak(KeccakPermutation permutation, int rateLength, int capacityLength, int outputLength)//, ulong[] initialState)
         {
-
+            _b = (int)permutation;
             _r = rateLength;
             _c = capacityLength;
-            _w = ((int)permutation) / 25;
+            _w = (_b) / 25;
             _l = (int)(Math.Log(_w) / Math.Log(2));
-            rounds = 12 + 2 * _l;
+            _n_r = 12 + 2 * _l;
 
             _outputLength = outputLength;
 
