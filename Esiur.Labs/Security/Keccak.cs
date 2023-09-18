@@ -124,7 +124,7 @@ namespace Esiur.Labs.Security
         }
 
 
-        public byte[] Compute(bool[] mbits)
+        public byte[] Compute(bool[] mbits, byte[] mbytes)
         {
 
             var rt = new byte[_outputLength];
@@ -140,7 +140,7 @@ namespace Esiur.Labs.Security
             for (var i = 0; i < mbits.Length; i++)
                 if (mbits[i])
                     d += Math.Pow(2, i);
-    
+
 
 
             /*
@@ -148,6 +148,9 @@ namespace Esiur.Labs.Security
                 S[x, y] = 0,                               for (x, y) in (0…4,0…4)
             */
 
+            ulong[][] S;
+
+            for (var i = 0; i < )
 
             /*
   # Absorbing phase
