@@ -40,6 +40,7 @@ using Esiur.Labs.Queueing;
 using Esiur.Labs.Coding;
 using Esiur.Labs.Signals.Codes;
 using Esiur.Labs.Signals;
+using Esiur.Labs.Security;
 
 namespace Esiur.Analysis.Test
 {
@@ -54,6 +55,8 @@ namespace Esiur.Analysis.Test
         static void Main()
         {
 
+
+            var sh = new Keccak(Keccak.KeccakPermutation.P1600, 1152, 448, 224, new bool[] { false, true });
 
             var queues = new Queue[] { new Queue() {  ServiceRate = 2, VisitRatio = 1 },
                                      new Queue() { Servers = 1 , ServiceRate = 1, VisitRatio = 0.2 },

@@ -27,6 +27,7 @@ SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Esiur.Data;
 
 namespace Esiur.Labs.Security
 {
@@ -94,7 +95,9 @@ namespace Esiur.Labs.Security
         int _n_r; // number of rounds
         int _outputLength; // the output will be trimmed to this length
 
-        public Keccak(KeccakPermutation permutation, int rateLength, int capacityLength, int outputLength)//, ulong[] initialState)
+        ulong _d;
+
+        public Keccak(KeccakPermutation permutation, int rateLength, int capacityLength, int outputLength, bool[] mbits)//, ulong[] initialState)
         {
             _b = (int)permutation;
             _r = rateLength;
@@ -104,6 +107,11 @@ namespace Esiur.Labs.Security
             _n_r = 12 + 2 * _l;
 
             _outputLength = outputLength;
+
+            _d = (ulong)Math.Pow(2, mbits.Length);
+            for (var i = 0; i < mbits.Length; i++)
+                if (mbits[i])
+                    _d += (ulong)Math.Pow(2, i);
 
             //if (rateLength + capacityLength != 200)
             //    throw new Exception("Rate+Capacity must equal to 200.");
@@ -124,7 +132,7 @@ namespace Esiur.Labs.Security
         }
 
 
-        public byte[] Compute(bool[] mbits, byte[] mbytes)
+        public byte[] Compute(byte[] mbytes)
         {
 
             var rt = new byte[_outputLength];
@@ -136,11 +144,16 @@ namespace Esiur.Labs.Security
                 P = P xor(0x00 || … || 0x00 || 0x80)
             */
 
-            var d = Math.Pow(2, mbits.Length);
-            for (var i = 0; i < mbits.Length; i++)
-                if (mbits[i])
-                    d += Math.Pow(2, i);
 
+            if (_w == 64)
+            {
+                var p = new ulong[mbytes.Length / 8];
+
+                for (uint i = 0; i < p.Length; i += 8)
+                {
+                    p[i] = mbytes.GetUInt64(i * 8, Endian.Little);
+                }
+            }
 
 
             /*
