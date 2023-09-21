@@ -34,29 +34,29 @@ namespace Esiur.Labs.Security
         // mbits = 01 for all SHA3
 
 
-        public byte[] ComputeSha224(byte[] data)
-        {
-            var keccak = new Keccak(Keccak.KeccakPermutation.P1600, 1152, 448, 224);
-            return keccak.Compute(new bool[] { true, false });
-        }
+        //public byte[] ComputeSha224(byte[] data)
+        //{
+        //    var keccak = new Keccak(Keccak.KeccakPermutation.P1600, 1152, 448, 224);
+        //    return keccak.Compute(new bool[] { true, false });
+        //}
 
-        public byte[] ComputeSha256(byte[] data)
-        {
-            var keccak = new Keccak(Keccak.KeccakPermutation.P1600, 1088, 512, 256);
-            return keccak.Compute(new bool[] { true, false });
-        }
+        //public byte[] ComputeSha256(byte[] data)
+        //{
+        //    var keccak = new Keccak(Keccak.KeccakPermutation.P1600, 1088, 512, 256);
+        //    return keccak.Compute(new bool[] { true, false });
+        //}
 
-        public byte[] ComputeSha384(byte[] data)
-        {
-            var keccak = new Keccak(Keccak.KeccakPermutation.P1600, 832, 768, 512);
-            return keccak.Compute(new bool[] { true, false });
-        }
+        //public byte[] ComputeSha384(byte[] data)
+        //{
+        //    var keccak = new Keccak(Keccak.KeccakPermutation.P1600, 832, 768, 512);
+        //    return keccak.Compute(new bool[] { true, false });
+        //}
 
-        public byte[] ComputeSha512(byte[] data)
-        {
-            var keccak = new Keccak(Keccak.KeccakPermutation.P1600, 576, 1024, 512);
-            return keccak.Compute(new bool[] { true, false });
-        }
+        //public byte[] ComputeSha512(byte[] data)
+        //{
+        //    var keccak = new Keccak(Keccak.KeccakPermutation.P1600, 576, 1024, 512);
+        //    return keccak.Compute(new bool[] { true, false });
+        //}
 
 
     }

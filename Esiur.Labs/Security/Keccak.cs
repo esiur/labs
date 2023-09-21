@@ -95,7 +95,7 @@ namespace Esiur.Labs.Security
         int _n_r; // number of rounds
         int _outputLength; // the output will be trimmed to this length
 
-        ulong _d;
+        byte _d; // delimiter
 
         public Keccak(KeccakPermutation permutation, int rateLength, int capacityLength, int outputLength, bool[] mbits)//, ulong[] initialState)
         {
@@ -108,10 +108,12 @@ namespace Esiur.Labs.Security
 
             _outputLength = outputLength;
 
-            _d = (ulong)Math.Pow(2, mbits.Length);
+            _d = (byte)Math.Pow(2, mbits.Length);
             for (var i = 0; i < mbits.Length; i++)
                 if (mbits[i])
-                    _d += (ulong)Math.Pow(2, i);
+                    _d += (byte)Math.Pow(2, i);
+
+            Console.WriteLine(_d);
 
             //if (rateLength + capacityLength != 200)
             //    throw new Exception("Rate+Capacity must equal to 200.");
@@ -144,14 +146,41 @@ namespace Esiur.Labs.Security
                 P = P xor(0x00 || … || 0x00 || 0x80)
             */
 
+            byte[] p; // padded message
+
+            var rateBytes = (uint)(_r / 8);
+            if (mbytes.Length == rateBytes - 1) {
+                // Special case. _d and 0x80 must always be present. 
+                // If the message length is 1 byte less than a 
+                // multiple of the rate, append these two values OR'd together 
+                // so the last byte is 0x86
+                p = new byte[mbytes.Length + 1];
+                Buffer.BlockCopy(mbytes, 0, p, 0, mbytes.Length);
+                p[mbytes.Length - 1] = (byte)(_d | 0x80);
+            }
+            else
+            {
+                // Messages are padded to something like 
+                // [... 0x06, 0x0, 0x0 ..., 0x80]
+                p = new byte[mbytes.Length + mbytes.Length % rateBytes];
+                Buffer.BlockCopy(mbytes, 0, p, 0, mbytes.Length);
+                // set delimiter
+                p[mbytes.Length] = _d;
+                // everything between is 0
+                // set trailing 1 (pad10*1)
+                p[p.Length - 1] = 0x80;
+            }
+
 
             if (_w == 64)
             {
-                var p = new ulong[mbytes.Length / 8];
+                var state = new ulong[5, 5];
 
-                for (uint i = 0; i < p.Length; i += 8)
+                //var p = new ulong[mbytes.Length / 8];
+
+                for (uint i = 0; i < p.Length; i += rateBytes)
                 {
-                    p[i] = mbytes.GetUInt64(i * 8, Endian.Little);
+                   var b = mbytes.GetUInt64(i, Endian.Little);
                 }
             }
 
@@ -163,7 +192,8 @@ namespace Esiur.Labs.Security
 
             ulong[][] S;
 
-            for (var i = 0; i < )
+            return null;
+            //for (var i = 0; i < )
 
             /*
   # Absorbing phase
