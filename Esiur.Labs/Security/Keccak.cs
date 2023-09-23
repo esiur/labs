@@ -26,7 +26,9 @@ SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using Esiur.Data;
 
@@ -67,10 +69,11 @@ namespace Esiur.Labs.Security
         // Rotation offsets
         readonly int[,] R =
         {
-            {0, 1, 62, 28, 27},
-            {36, 44, 6, 55, 20},
-            {3, 10, 43, 25, 39},
-            {41, 45, 15, 21, 8}
+            {0, 36, 3, 41, 18 },
+            {1, 44, 10, 45, 2 },
+            {62, 6, 43, 15, 61 },
+            {28, 55, 25, 21, 56 },
+            {27, 20, 39, 8, 14 }
         };
 
         public enum KeccakPermutation
@@ -97,6 +100,7 @@ namespace Esiur.Labs.Security
         int _outputLength; // the output will be trimmed to this length (in bits)
 
         byte _d; // delimiter
+
 
         public Keccak(KeccakPermutation permutation, int rateLength, int capacityLength, int outputLength, bool[] mbits)//, ulong[] initialState)
         {
@@ -135,6 +139,7 @@ namespace Esiur.Labs.Security
         }
 
 
+
         public byte[] Compute(byte[] mbytes)
         {
 
@@ -170,7 +175,7 @@ namespace Esiur.Labs.Security
             {
                 // Messages are padded to something like 
                 // [... 0x06, 0x0, 0x0 ..., 0x80]
-                p = new byte[mbytes.Length + ( mbytes.Length % rateBytes)];
+                p = new byte[mbytes.Length + (mbytes.Length % rateBytes)];
                 Buffer.BlockCopy(mbytes, 0, p, 0, mbytes.Length);
                 // set delimiter
                 p[mbytes.Length] = _d;
@@ -197,7 +202,7 @@ namespace Esiur.Labs.Security
                     for (var x = 0; x < 5; x++)
                         for (var y = 0; y < 5; y++)
                             if (x + 5 * y < pi.Length)
-                                 state[x, y] ^= pi[x + 5 * y];
+                                state[x, y] ^= pi[x + 5 * y];
 
                     state = KeccakF(state);
                 }
@@ -247,7 +252,7 @@ namespace Esiur.Labs.Security
         {
             var rt = new List<byte>();
 
-            foreach(var x in array)
+            foreach (var x in array)
                 rt.AddRange(x.ToBytes(Endian.Little));
 
             return rt.ToArray();
@@ -263,6 +268,13 @@ namespace Esiur.Labs.Security
             return a;
         }
 
+        int Mod5(int number)
+        {
+            var rt = number % 5;
+            if (rt < 0) return rt + 5;
+            return rt;
+        }
+
         public ulong RotL(ulong value, int shift)
         {
             return value << shift | value >> (64 - shift);
@@ -273,6 +285,21 @@ namespace Esiur.Labs.Security
             return value >> shift | value << (64 - shift);
         }
 
+        void PrintState(ulong[,] s)
+        {
+            var rt = new List<byte>();
+
+            for(var  x = 0; x < 5; x++)
+                for(var y = 0; y < 5; y++)
+                {
+                    rt.AddRange(DC.ToBytes(s[x, y], Endian.Little));
+                }
+
+            var b = rt.ToArray();
+
+            for(var i =0; i < b.Length / 16; i++)
+                Debug.WriteLine(DC.ToHex(rt.ToArray(), i * 16, 16));
+        }
 
         public ulong[,] Round(ulong[,] a, ulong rc)
         {
@@ -291,7 +318,7 @@ namespace Esiur.Labs.Security
 
 
             for (var x = 0; x < 5; x++)
-                d[x] = c[x - 1] ^ RotL(c[(x + 1) % 5], 1);
+                d[x] = c[Mod5(x - 1)] ^ RotL(c[Mod5(x + 1)], 1);
 
             for (var x = 0; x < 5; x++)
                 for (var y = 0; y < 5; y++)
@@ -301,12 +328,13 @@ namespace Esiur.Labs.Security
             # ρ and π steps
                 B[y,2*x+3*y] = rot(A[x,y], r[x,y]),                 for (x,y) in (0…4,0…4)
             */
+            PrintState(a);
 
             var b = new ulong[5, 5];
 
             for (var x = 0; x < 5; x++)
                 for (var y = 0; y < 5; y++)
-                    b[y, (2 * x + 3 * y) % 5] = RotL(a[x, y], R[x, y]);
+                    b[y, Mod5((2 * x) + (3 * y))] = RotL(a[x, y], R[x, y]);
             /*
               # χ step
               A[x,y] = B[x,y] xor ((not B[x+1,y]) and B[x+2,y]),  for (x,y) in (0…4,0…4)
@@ -314,7 +342,7 @@ namespace Esiur.Labs.Security
 
             for (var x = 0; x < 5; x++)
                 for (var y = 0; y < 5; y++)
-                    a[x, y] = b[x, y] ^ ((~b[(x + 1) % 5, y]) & b[(x + 2) % 5, y]);
+                    a[x, y] = b[x, y] ^ ((~b[Mod5(x + 1), y]) & b[Mod5(x + 2), y]);
 
             /*
               # ι step
