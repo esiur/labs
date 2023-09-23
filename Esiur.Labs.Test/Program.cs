@@ -58,6 +58,8 @@ namespace Esiur.Analysis.Test
 
             var sh = new Keccak(Keccak.KeccakPermutation.P1600, 1152, 448, 224, new bool[] { false, true });
 
+            var rt = sh.Compute(new byte[0]);// Encoding.ASCII.GetBytes("abc"));
+
             var queues = new Queue[] { new Queue() {  ServiceRate = 2, VisitRatio = 1 },
                                      new Queue() { Servers = 1 , ServiceRate = 1, VisitRatio = 0.2 },
                                      new Queue(){Servers = 1, ServiceRate = 2, VisitRatio = 0.3 },

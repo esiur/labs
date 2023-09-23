@@ -26,6 +26,7 @@ SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Esiur.Data;
 
@@ -93,7 +94,7 @@ namespace Esiur.Labs.Security
         int _r; // rate length
         int _c; // capacity
         int _n_r; // number of rounds
-        int _outputLength; // the output will be trimmed to this length
+        int _outputLength; // the output will be trimmed to this length (in bits)
 
         byte _d; // delimiter
 
@@ -137,7 +138,6 @@ namespace Esiur.Labs.Security
         public byte[] Compute(byte[] mbytes)
         {
 
-            var rt = new byte[_outputLength];
 
             /*
                 # Padding
@@ -149,7 +149,15 @@ namespace Esiur.Labs.Security
             byte[] p; // padded message
 
             var rateBytes = (uint)(_r / 8);
-            if (mbytes.Length == rateBytes - 1) {
+
+            if (mbytes.Length == 0)
+            {
+                p = new byte[rateBytes];
+                p[0] = _d;
+                p[p.Length - 1] = 0x80;
+            }
+            else if (mbytes.Length == rateBytes - 1)
+            {
                 // Special case. _d and 0x80 must always be present. 
                 // If the message length is 1 byte less than a 
                 // multiple of the rate, append these two values OR'd together 
@@ -162,7 +170,7 @@ namespace Esiur.Labs.Security
             {
                 // Messages are padded to something like 
                 // [... 0x06, 0x0, 0x0 ..., 0x80]
-                p = new byte[mbytes.Length + mbytes.Length % rateBytes];
+                p = new byte[mbytes.Length + ( mbytes.Length % rateBytes)];
                 Buffer.BlockCopy(mbytes, 0, p, 0, mbytes.Length);
                 // set delimiter
                 p[mbytes.Length] = _d;
@@ -180,48 +188,79 @@ namespace Esiur.Labs.Security
 
                 for (uint i = 0; i < p.Length; i += rateBytes)
                 {
-                   var b = mbytes.GetUInt64(i, Endian.Little);
+
+                    var pi = new ulong[rateBytes / 8];
+                    for (uint j = 0; j < pi.Length; j++)
+                        pi[j] = p.GetUInt64(i + 8 * j, Endian.Little);
+
+
+                    for (var x = 0; x < 5; x++)
+                        for (var y = 0; y < 5; y++)
+                            if (x + 5 * y < pi.Length)
+                                 state[x, y] ^= pi[x + 5 * y];
+
+                    state = KeccakF(state);
                 }
+
+
+                /*
+                   # Squeezing phase
+                    Z = empty string
+                    while output is requested
+                      Z = Z || S[x,y],                        for (x,y) such that x+5*y < r/w
+                      S = Keccak-f[r+c](S)
+
+                    return Z
+                */
+
+                var outputWords = _outputLength / 64;
+
+                var z = new ulong[outputWords];
+                var outputBlocks = (uint)Math.Ceiling(((double)outputWords / 25.0));
+
+                for (var b = 0; b < outputBlocks; b++)
+                {
+
+                    for (var x = 0; x < 5; x++)
+                    {
+                        for (var y = 0; y < 5; y++)
+                        {
+                            var index = x + 5 * y;
+                            if (index >= outputWords)
+                                return UInt64ToBytes(z);
+
+                            z[(b * 25) + index] = state[x, y];
+                        }
+                    }
+
+                    state = KeccakF(state);
+                }
+
+                return UInt64ToBytes(z);
+
             }
-
-
-            /*
-              # Initialization
-                S[x, y] = 0,                               for (x, y) in (0…4,0…4)
-            */
-
-            ulong[][] S;
 
             return null;
-            //for (var i = 0; i < )
-
-            /*
-  # Absorbing phase
-  for each block Pi in P
-    S[x, y] = S[x, y] xor Pi[x + 5 * y],          for (x, y) such that x + 5 * y < r / w
-    S = Keccak - f[r + c](S)
-            */
-
-            /*
-  # Squeezing phase
-  Z = empty string
-  while output is requested
-    Z = Z || S[x, y],                        for (x, y) such that x + 5 * y < r / w
-    S = Keccak - f[r + c](S)
-              return Z
-
-             */
-
-            return rt;
         }
 
-
-        public void KeccakF(ulong[,] a)
+        byte[] UInt64ToBytes(ulong[] array)
         {
-            for (var i = 0; i < a.Length; i++)
+            var rt = new List<byte>();
+
+            foreach(var x in array)
+                rt.AddRange(x.ToBytes(Endian.Little));
+
+            return rt.ToArray();
+        }
+
+        public ulong[,] KeccakF(ulong[,] a)
+        {
+            for (var i = 0; i < _n_r; i++)
             {
-                Round(a, RC[i]);
+                a = Round(a, RC[i]);
             }
+
+            return a;
         }
 
         public ulong RotL(ulong value, int shift)
@@ -235,7 +274,7 @@ namespace Esiur.Labs.Security
         }
 
 
-        public void Round(ulong[,] a, ulong rc)
+        public ulong[,] Round(ulong[,] a, ulong rc)
         {
             /*
               # θ step
@@ -252,7 +291,7 @@ namespace Esiur.Labs.Security
 
 
             for (var x = 0; x < 5; x++)
-                d[x] = c[x - 1] ^ RotL(c[(x + 1)%5], 1);
+                d[x] = c[x - 1] ^ RotL(c[(x + 1) % 5], 1);
 
             for (var x = 0; x < 5; x++)
                 for (var y = 0; y < 5; y++)
@@ -283,6 +322,8 @@ namespace Esiur.Labs.Security
              */
 
             a[0, 0] = a[0, 0] ^ rc;
+
+            return a;
         }
     }
 }
