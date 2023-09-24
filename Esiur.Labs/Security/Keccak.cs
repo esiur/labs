@@ -28,6 +28,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Security;
 using System.Security.Cryptography;
 using System.Text;
 using Esiur.Data;
@@ -119,7 +120,18 @@ namespace Esiur.Labs.Security
                     _d += (byte)Math.Pow(2, i);
         }
 
+        public Keccak(KeccakPermutation permutation, int rateLength, int capacityLength, int outputLength, byte delimiter)
+        {
+            _b = (int)permutation;
+            _r = rateLength;
+            _c = capacityLength;
+            _w = (_b) / 25;
+            _l = (int)(Math.Log(_w) / Math.Log(2));
+            _n_r = 12 + 2 * _l;
 
+            _outputLength = outputLength;
+            _d = delimiter;
+        }
 
         public byte[] Compute(byte[] mbytes)
         {
@@ -136,34 +148,13 @@ namespace Esiur.Labs.Security
 
             var rateBytes = (uint)(_r / 8);
 
-            if (mbytes.Length == 0)
-            {
-                p = new byte[rateBytes];
-                p[0] = _d;
-                p[p.Length - 1] = 0x80;
-            }
-            else if (mbytes.Length == rateBytes - 1)
-            {
-                // Special case. _d and 0x80 must always be present. 
-                // If the message length is 1 byte less than a 
-                // multiple of the rate, append these two values OR'd together 
-                // so the last byte is 0x86
-                p = new byte[mbytes.Length + 1];
-                Buffer.BlockCopy(mbytes, 0, p, 0, mbytes.Length);
-                p[mbytes.Length - 1] = (byte)(_d | 0x80);
-            }
-            else
-            {
-                // Messages are padded to something like 
-                // [... 0x06, 0x0, 0x0 ..., 0x80]
-                p = new byte[mbytes.Length + (mbytes.Length % rateBytes)];
-                Buffer.BlockCopy(mbytes, 0, p, 0, mbytes.Length);
-                // set delimiter
-                p[mbytes.Length] = _d;
-                // everything between is 0
-                // set trailing 1 (pad10*1)
-                p[p.Length - 1] = 0x80;
-            }
+            p = new byte[mbytes.Length + (rateBytes - (mbytes.Length % rateBytes))];
+            Buffer.BlockCopy(mbytes, 0, p, 0, mbytes.Length);
+            // set delimiter
+            p[mbytes.Length] = _d;
+            // everything between is 0
+            // set trailing 1 (pad10*1)
+            p[p.Length - 1] |= 0x80;
 
 
             if (_w == 64)
@@ -180,8 +171,8 @@ namespace Esiur.Labs.Security
 
                     for (var x = 0; x < 5; x++)
                         for (var y = 0; y < 5; y++)
-                            if (x + 5 * y < pi.Length)
-                                state[x, y] ^= pi[x + 5 * y];
+                            if (x + (5 * y) < pi.Length)
+                                state[x, y] ^= pi[x + (5 * y)];
 
                     state = KeccakF(state);
                 }
@@ -197,8 +188,7 @@ namespace Esiur.Labs.Security
                     return Z
                 */
 
-                PrintState(state);
-
+ 
                 var outputBlocks = Math.Ceiling((double)_outputLength / (double)_b); // both in bits
 
                 var outputBytes = _outputLength / 8;
@@ -260,8 +250,7 @@ namespace Esiur.Labs.Security
                     return Z
                 */
 
-                PrintState(state);
-
+ 
                 var outputBlocks = Math.Ceiling((double)_outputLength / (double)_b); // both in bits
 
                 var outputBytes = _outputLength / 8;
@@ -371,8 +360,8 @@ namespace Esiur.Labs.Security
         {
             var i = 0;
 
-            for(var  x = 0; x < 5; x++)
-                for(var y = 0; y < 5; y++)
+            for (var x = 0; x < 5; x++)
+                for (var y = 0; y < 5; y++)
                 {
                     if (i++ % 2 == 0)
                         Debug.WriteLine("");
@@ -409,7 +398,7 @@ namespace Esiur.Labs.Security
               D[x] = C[x-1] xor rot(C[x+1],1),                             for x in 0…4
               A[x,y] = A[x,y] xor D[x],                           for (x,y) in (0…4,0…4)
             */
-           // PrintState(a);
+            // PrintState(a);
 
             var c = new ulong[5];
             var d = new ulong[5];

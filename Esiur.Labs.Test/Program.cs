@@ -57,11 +57,20 @@ namespace Esiur.Analysis.Test
         {
 
 
-            var sh = new Keccak(Keccak.KeccakPermutation.P1600, 1152, 448, 224, new bool[] { false, true });
+            var sh3_224 = new Keccak(Keccak.KeccakPermutation.P1600, 1152, 448, 224, 0x6);
+            var sh3_256 = new Keccak(Keccak.KeccakPermutation.P1600, 1088, 512, 256, 0x6);
+            var sh3_384 = new Keccak(Keccak.KeccakPermutation.P1600, 832, 768, 384, 0x6);
+            var sh3_512 = new Keccak(Keccak.KeccakPermutation.P1600, 576, 1024, 512, 0x6);
 
-            var rt = sh.Compute(new byte[0]);// Encoding.ASCII.GetBytes("abc"));
+            var m = "";
+            for (var i = 0; i < 143; i++)
+                m += "a";
 
-            Debug.WriteLine(DC.ToHex(rt));
+            Debug.WriteLine(DC.ToHex(sh3_224.Compute( Encoding.ASCII.GetBytes(m))));
+            Debug.WriteLine(DC.ToHex(sh3_256.Compute(Encoding.ASCII.GetBytes(m))));
+            Debug.WriteLine(DC.ToHex(sh3_384.Compute(Encoding.ASCII.GetBytes(m))));
+            Debug.WriteLine(DC.ToHex(sh3_512.Compute(Encoding.ASCII.GetBytes(m))));
+
 
             var queues = new Queue[] { new Queue() {  ServiceRate = 2, VisitRatio = 1 },
                                      new Queue() { Servers = 1 , ServiceRate = 1, VisitRatio = 0.2 },
